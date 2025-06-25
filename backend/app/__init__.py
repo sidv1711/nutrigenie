@@ -1,0 +1,3 @@
+"""
+NutriGenie Backend Application
+"""
