@@ -128,11 +128,19 @@ export const MealPlanDisplay: React.FC = () => {
                                         <div style={{ margin: '8px 0' }}>
                                             <div style={{ fontWeight: 600, fontSize: 14 }}>Ingredients:</div>
                                             <ul style={{ fontSize: 14, margin: 0, paddingLeft: 18 }}>
-                                                {meal.recipe.ingredients.map((ingredient, idx) => (
-                                                    <li key={idx}>
-                                                        {ingredient.quantity} {ingredient.unit} {ingredient.name}
-                                                    </li>
-                                                ))}
+                                                {meal.recipe.ingredients.map((ingredient, idx) => {
+                                                    const cost = ingredient.price_per_unit !== undefined && ingredient.price_per_unit !== null
+                                                        ? (ingredient.price_per_unit * ingredient.quantity)
+                                                        : undefined;
+                                                    return (
+                                                        <li key={idx}>
+                                                            {ingredient.quantity} {ingredient.unit} {ingredient.name}
+                                                            {cost !== undefined && (
+                                                                <> — $ {cost.toFixed(2)}{' '}<span style={{color:'#718096',fontSize:12}}>(@ ${ingredient.price_per_unit.toFixed(2)}/{ingredient.unit})</span></>
+                                                            )}
+                                                        </li>
+                                                    );
+                                                })}
                                             </ul>
                                         </div>
                                         <div style={{ margin: '8px 0' }}>

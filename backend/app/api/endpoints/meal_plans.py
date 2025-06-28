@@ -72,7 +72,8 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
             # Populate ingredients list for this recipe
             recipe_id_val = recipe_row["id"]
             if recipe_id_val:
-                ing_res = supabase.table("recipe_ingredients").select("quantity, unit, ingredients(name, category)").eq("recipe_id", recipe_id_val).execute()
+                # Grab price information from the joined ingredients row as well
+                ing_res = supabase.table("recipe_ingredients").select("quantity, unit, ingredients(name, category, price_per_unit)").eq("recipe_id", recipe_id_val).execute()
                 ingredients_list = []
                 for ing_row in ing_res.data or []:
                     ing_base = ing_row.get("ingredients", {}) or {}
@@ -81,7 +82,7 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
                         "category": ing_base.get("category"),
                         "unit": ing_row.get("unit"),
                         "quantity": ing_row.get("quantity"),
-                        "price_per_unit": None,
+                        "price_per_unit": ing_base.get("price_per_unit"),
                     })
                 meal_obj["recipe"]["ingredients"] = ingredients_list
 
