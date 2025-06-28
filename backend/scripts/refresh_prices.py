@@ -53,9 +53,22 @@ def maybe_update_external_ids(store: Dict) -> Dict:
         return store
 
     if not store.get("kroger_location_id"):
-        kroger_id = KROGER.lookup_location_id(lat, lon)
-        if kroger_id:
-            updated["kroger_location_id"] = kroger_id
+        banners = [
+            "kroger",
+            "ralph",
+            "fred meyer",
+            "fry",
+            "king soopers",
+            "harris teeter",
+            "smith",
+            "city market",
+            "pick n save",
+        ]
+        store_name = (store.get("name") or "").lower()
+        if any(b in store_name for b in banners):
+            kroger_id = KROGER.lookup_location_id(lat, lon)
+            if kroger_id:
+                updated["kroger_location_id"] = kroger_id
 
     if not store.get("walmart_store_id"):
         walmart_id = WALMART.lookup_store_id(lat, lon)
@@ -71,8 +84,28 @@ def maybe_update_external_ids(store: Dict) -> Dict:
 
 
 def iter_ingredients() -> List[Dict]:
-    res = SUPABASE.table("ingredients").select("name, default_unit").execute()
-    return res.data or []
+    """Return ingredient rows with a unit field.
+
+    Some older databases may lack the `default_unit` column. In that case we
+    fall back to the generic `unit` column so the loader still works instead
+    of crashing.
+    """
+    try:
+        res = SUPABASE.table("ingredients").select("name, default_unit").execute()
+        cleaned = []
+        for row in (res.data or []):
+            unit_val = row.get("default_unit") or row.get("unit") or "each"
+            cleaned.append({"name": row["name"], "default_unit": unit_val})
+        return cleaned
+    except Exception:
+        # Column likely missing – fallback to `unit`.
+        res = SUPABASE.table("ingredients").select("name, unit").execute()
+        # Remap key to keep downstream code unchanged
+        cleaned = []
+        for row in (res.data or []):
+            unit_val = row.get("default_unit") or row.get("unit") or "each"
+            cleaned.append({"name": row["name"], "default_unit": unit_val})
+        return cleaned
 
 
 def main():
