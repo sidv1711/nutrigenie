@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import json
 from openai import OpenAI
 from ..models.meal_plan import MealPlan, MealPlanRequest, Recipe, Ingredient
@@ -225,7 +225,7 @@ Ensure recipes are simple, healthy, and budget-friendly."""
 
     plan.total_cost = round(grand_total, 2)
 
-    plan_id: str | None = None  # default in case DB insert fails
+    plan_id: Optional[str] = None  # default in case DB insert fails
 
     # Persist high-level row to Supabase
     try:
