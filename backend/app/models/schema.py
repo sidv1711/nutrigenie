@@ -44,3 +44,5 @@ class Store(BaseModel):
     latitude: float
     longitude: float
     place_id: str  # Google Places ID 
+    kroger_location_id: Optional[str] | None = None
+    walmart_store_id: Optional[str] | None = None 

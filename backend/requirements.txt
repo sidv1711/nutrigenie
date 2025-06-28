@@ -6,7 +6,6 @@ httpx>=0.24,<0.25  # Supabase client needs httpx 0.24.x (proxy param support)
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 supabase==2.15.2
-+httpx==0.27.2
 langchain==0.1.12
 openai==1.14.0
 email-validator==2.1.0.post1
