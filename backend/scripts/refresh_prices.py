@@ -16,6 +16,13 @@ from app.core.supabase import get_supabase_admin
 from app.services.kroger import KrogerPriceSource
 from app.services.walmart import WalmartPriceSource
 
+# Ensure .env variables (including KROGER_CLIENT_ID / SECRET) are loaded when
+# this script runs outside the FastAPI context.
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 SUPABASE = get_supabase_admin()
@@ -30,7 +37,7 @@ def iter_store_mappings() -> List[Dict]:
     """Return each store row with the retailer-specific IDs we need."""
     res = (
         SUPABASE.table("stores")
-        .select("place_id,kroger_location_id,walmart_store_id,latitude,longitude")
+        .select("place_id,kroger_location_id,walmart_store_id,lat,lon")
         .execute()
     )
     return res.data or []
@@ -40,8 +47,8 @@ def maybe_update_external_ids(store: Dict) -> Dict:
     """Fill missing retailer IDs and persist back to Supabase."""
     updated: Dict[str, Optional[str]] = {}
 
-    lat = store.get("latitude")
-    lon = store.get("longitude")
+    lat = store.get("lat")
+    lon = store.get("lon")
     if lat is None or lon is None:
         return store
 
