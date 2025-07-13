@@ -15,7 +15,7 @@ class WalmartPriceSource(PriceSource):
     def source_name(self) -> str:
         return "walmart_web"
 
-    def fetch_price(self, store_external_id: str, ingredient_name: str, unit: str) -> Optional[float]:
+    def fetch_price(self, store_external_id: str, ingredient_name: str, unit: str):
         # store_external_id is Walmart numeric store id (string)
         url = (
             f"https://www.walmart.com/search?q={ingredient_name.replace(' ', '%20')}"
@@ -25,11 +25,11 @@ class WalmartPriceSource(PriceSource):
             r = httpx.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
             r.raise_for_status()
         except Exception:
-            return None
+            return (None, unit)
 
         m = _JSON_RE.search(r.text)
         if not m:
-            return None
+            return (None, unit)
         try:
             data = json.loads(m.group(1))
             items = (
@@ -39,14 +39,14 @@ class WalmartPriceSource(PriceSource):
                 .get("items", [])
             )
             if not items:
-                return None
+                return (None, unit)
             price_info = items[0].get("price", {})
             price = price_info.get("price") or price_info.get("minPrice")
             if price is None:
-                return None
-            return float(price)
+                return (None, unit)
+            return (float(price), unit)
         except Exception:
-            return None
+            return (None, unit)
 
     # -------------------------
     # Store-ID lookup utilities

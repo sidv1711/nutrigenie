@@ -63,6 +63,26 @@ Exit: login round-trip works.
 * Price scrape POC (Instacart/Walmart HTML via BeautifulSoup).  
 * Cache to `prices` table (store_id, ingredient_id, price, timestamp).
 
+### ⏰ Nightly price refresh (GitHub Actions)
+
+The file `.github/workflows/refresh_prices.yml` runs **every day at 03:00&nbsp;UTC** (and on demand) and executes:
+
+```bash
+PYTHONPATH=backend python backend/scripts/refresh_prices.py
+```
+
+To enable it you must add the following repository secrets:
+
+| Secret | Description |
+|--------|-------------|
+| `SUPABASE_URL` | `https://<project>.supabase.co` |
+| `SUPABASE_SERVICE_KEY` | Service-role key (full RLS bypass) |
+| `GOOGLE_API_KEY` | Places & Geocoding API key |
+| `KROGER_CLIENT_ID` / `KROGER_CLIENT_SECRET` | Kroger public API credentials |
+
+Without these the workflow will fail and price data will stay empty.  
+You can run the refresh script locally to verify your keys before enabling the workflow.
+
 ---
 
 ## Week 5 – Embeddings & RAG

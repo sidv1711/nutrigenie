@@ -124,9 +124,14 @@ const MealPlanForm: React.FC = () => {
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        let numVal = Number(value);
+        // Auto-cap carbs at 500 g (backend upper bound)
+        if (name === 'carbs_per_day' && numVal > 500) {
+            numVal = 500;
+        }
         setFormData(prev => ({
             ...prev,
-            [name]: Number(value),
+            [name]: numVal,
         }));
     };
 

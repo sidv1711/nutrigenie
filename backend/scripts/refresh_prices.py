@@ -10,6 +10,7 @@ Environment:
 
 import datetime
 import logging
+import asyncio
 from typing import List, Dict, Optional
 
 from app.core.supabase import get_supabase_admin
@@ -31,6 +32,8 @@ SUPABASE = get_supabase_admin()
 KROGER = KrogerPriceSource()
 WALMART = WalmartPriceSource()
 SOURCES = [KROGER, WALMART]
+
+CONCURRENCY = 20
 
 
 def iter_store_mappings() -> List[Dict]:
@@ -108,10 +111,29 @@ def iter_ingredients() -> List[Dict]:
         return cleaned
 
 
-def main():
+async def gather_prices() -> List[Dict]:
+    """Fetch all prices concurrently and return the list of upsert rows."""
     now = datetime.datetime.utcnow().isoformat()
-    price_rows = []
 
+    semaphore = asyncio.Semaphore(CONCURRENCY)
+
+    ingredients = iter_ingredients()  # fetch once
+    price_rows: List[Dict] = []
+
+    async def fetch_one(store: Dict, src, ext_id: str, ing: Dict):
+        async with semaphore:
+            price, resolved_unit = await src.async_fetch_price(ext_id, ing["name"], ing["default_unit"])
+            if price is None:
+                return None
+            return {
+                "place_id": store["place_id"],
+                "ingredient_name": ing["name"],
+                "unit": resolved_unit or ing["default_unit"],
+                "price_per_unit": price,
+                "last_seen_at": now,
+            }
+
+    tasks = []
     for raw_store in iter_store_mappings():
         store = maybe_update_external_ids(raw_store)
         for src in SOURCES:
@@ -125,21 +147,28 @@ def main():
             if not ext_id:
                 continue
 
-            for ing in iter_ingredients():
-                price = src.fetch_price(ext_id, ing["name"], ing["default_unit"])
-                if price is None:
-                    continue
-                price_rows.append({
-                    "place_id": store["place_id"],
-                    "ingredient_name": ing["name"],
-                    "unit": ing["default_unit"],
-                    "price_per_unit": price,
-                    "last_seen_at": now,
-                })
+            for ing in ingredients:
+                tasks.append(fetch_one(store, src, ext_id, ing))
 
-    logging.info("Upserting %d price rows", len(price_rows))
-    for row in price_rows:
-        SUPABASE.table("stores_prices").upsert(row).execute()
+    for coro in asyncio.as_completed(tasks):
+        row = await coro
+        if row:
+            price_rows.append(row)
+
+    return price_rows
+
+
+def bulk_upsert(rows: List[Dict]):
+    if not rows:
+        logging.info("No rows to upsert; exiting")
+        return
+    logging.info("Bulk upserting %d rows", len(rows))
+    SUPABASE.table("stores_prices").upsert(rows).execute()
+
+
+def main():
+    price_rows = asyncio.run(gather_prices())
+    bulk_upsert(price_rows)
 
 
 if __name__ == "__main__":
