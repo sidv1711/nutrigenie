@@ -2,7 +2,6 @@ fastapi==0.115.12
 uvicorn[standard]==0.34.3
 python-dotenv==1.1.0
 pydantic==2.11.5
-httpx>=0.24,<0.25  # Supabase client needs httpx 0.24.x (proxy param support)
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 supabase==2.15.2
