@@ -39,6 +39,10 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
         if not plan_header.data:
             raise HTTPException(status_code=404, detail="Meal plan not found")
 
+        # Fetch selected stores for this plan (needed for price lookup)
+        plan_stores_res = supabase.table("meal_plan_stores").select("place_id").eq("meal_plan_id", plan_id).execute()
+        store_ids = [row["place_id"] for row in (plan_stores_res.data or [])]
+
         # fetch meals with joined recipe
         meals_res = supabase.table("meal_plan_recipes").select("meal_type, day_of_week, servings, recipes(*)").eq("meal_plan_id", plan_id).execute()
 
@@ -93,9 +97,6 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
             {"day_of_week": idx, "meals": days_map[idx]} for idx in sorted(days_map.keys())
         ]
 
-        # Fetch selected stores for this plan
-        plan_stores_res = supabase.table("meal_plan_stores").select("place_id").eq("meal_plan_id", plan_id).execute()
-        store_ids = [row["place_id"] for row in (plan_stores_res.data or [])]
         stores_list = []
         if store_ids:
             stores_res = supabase.table("stores").select("place_id,name").in_("place_id", store_ids).execute()
