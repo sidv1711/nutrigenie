@@ -13,4 +13,16 @@ export const groceryService = {
     if (!res.ok) throw new Error('Failed to fetch grocery list');
     return res.json();
   },
+
+  async exportCart(planId: string, retailer = 'instacart'): Promise<string> {
+    const token = localStorage.getItem('sb-access-token');
+    const res = await fetch(`${API_URL}/cart/${planId}?retailer=${retailer}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) throw new Error('Failed to create cart');
+    const json = await res.json();
+    return json.checkout_url;
+  },
 }; 

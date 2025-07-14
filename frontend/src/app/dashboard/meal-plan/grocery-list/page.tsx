@@ -89,6 +89,22 @@ export default function GroceryListPage() {
       <div className="mt-4 text-right font-semibold text-lg">
         Total: {total !== null ? `$${total.toFixed(2)}` : '—'}
       </div>
+
+      {planId && (
+        <button
+          className="mt-6 bg-green-600 text-white px-4 py-2 rounded"
+          onClick={async () => {
+            try {
+              const url = await groceryService.exportCart(planId);
+              window.open(url, '_blank');
+            } catch (err: any) {
+              alert(err.message || 'Failed to create cart');
+            }
+          }}
+        >
+          Add to Instacart
+        </button>
+      )}
     </div>
   );
 } 
