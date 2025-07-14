@@ -77,12 +77,15 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
                 ingredients_list = []
                 for ing_row in ing_res.data or []:
                     ing_base = ing_row.get("ingredients", {}) or {}
+                    # Override price with latest scraped value if available
+                    from ...services.pricing import get_price_per_unit
+                    ppu = get_price_per_unit(store_ids, ing_base.get("name"), ing_row.get("unit"), default=ing_base.get("price_per_unit"))
                     ingredients_list.append({
                         "name": ing_base.get("name"),
                         "category": ing_base.get("category"),
                         "unit": ing_row.get("unit"),
                         "quantity": ing_row.get("quantity"),
-                        "price_per_unit": ing_base.get("price_per_unit"),
+                        "price_per_unit": ppu,
                     })
                 meal_obj["recipe"]["ingredients"] = ingredients_list
 
