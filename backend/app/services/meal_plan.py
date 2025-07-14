@@ -238,14 +238,18 @@ Ensure recipes are simple, healthy, and budget-friendly."""
 
         if insert_res.data:
             plan_id = insert_res.data[0]["id"]
-            # Persist recipes and junction rows
-            recipe_id_cache = {}
+            # -------- Batch inserts to reduce round-trips --------
+            recipe_id_cache: dict[str, str] = {}
+            ingredient_id_cache: dict[str, str | None] = {}
+            bulk_ingredients: list[dict] = []
+            bulk_links: list[dict] = []
+
             for day in plan.days:
                 for meal in day.meals:
                     r = meal.recipe
-                    cache_key = r.name.lower()
-                    if cache_key in recipe_id_cache:
-                        recipe_id = recipe_id_cache[cache_key]
+                    key = r.name.lower()
+                    if key in recipe_id_cache:
+                        recipe_id = recipe_id_cache[key]
                     else:
                         recipe_insert = supabase.table("recipes").upsert({
                             "name": r.name,
@@ -261,8 +265,9 @@ Ensure recipes are simple, healthy, and budget-friendly."""
                             "dietary_tags": r.dietary_tags or [],
                         }, on_conflict="name").execute()
                         recipe_id = recipe_insert.data[0]["id"]
-                        recipe_id_cache[cache_key] = recipe_id
+                        recipe_id_cache[key] = recipe_id
 
+                    # Insert meal-plan link immediately (still one per meal)
                     supabase.table("meal_plan_recipes").insert({
                         "meal_plan_id": plan_id,
                         "recipe_id": recipe_id,
@@ -271,26 +276,50 @@ Ensure recipes are simple, healthy, and budget-friendly."""
                         "servings": meal.servings,
                     }).execute()
 
-                    # Persist each ingredient and link row
+                    # Collect ingredient data for batching
                     for ing in r.ingredients:
-                        # Upsert ingredient by name to ensure single id per unique ingredient
-                        ing_upsert = supabase.table("ingredients").upsert({
-                            "name": ing.name,
-                            "category": ing.category,
-                            "unit": ing.unit,
-                            "price_per_unit": ing.price_per_unit,
-                        }, on_conflict="name").execute()
-
-                        # Supabase returns a list even on upsert; grab id
-                        ingredient_id = ing_upsert.data[0]["id"] if ing_upsert.data else None
-                        if ingredient_id:
-                            # Insert into junction table (ignore conflict if already linked)
-                            supabase.table("recipe_ingredients").insert({
-                                "recipe_id": recipe_id,
-                                "ingredient_id": ingredient_id,
-                                "quantity": ing.quantity,
+                        ikey = ing.name.lower()
+                        if ikey not in ingredient_id_cache:
+                            bulk_ingredients.append({
+                                "name": ing.name,
+                                "category": ing.category,
                                 "unit": ing.unit,
-                            }).execute()
+                                "price_per_unit": ing.price_per_unit,
+                            })
+                            ingredient_id_cache[ikey] = None  # placeholder
+
+                        bulk_links.append({
+                            "recipe_id": recipe_id,
+                            "ingredient_name": ing.name,  # temp field to resolve later
+                            "quantity": ing.quantity,
+                            "unit": ing.unit,
+                        })
+
+            # ----- execute batched ingredient upsert -----
+            if bulk_ingredients:
+                names = [row["name"] for row in bulk_ingredients]
+                supabase.table("ingredients").upsert(bulk_ingredients, on_conflict="name").execute()
+
+                # fetch ids for these names
+                fetched = supabase.table("ingredients").select("id,name").in_("name", names).execute()
+                for row in fetched.data or []:
+                    ingredient_id_cache[row["name"].lower()] = row["id"]
+
+            # resolve ingredient ids in links
+            resolved_links: list[dict] = []
+            for link in bulk_links:
+                ing_id = ingredient_id_cache.get(link["ingredient_name"].lower())
+                if not ing_id:
+                    continue  # should not happen
+                resolved_links.append({
+                    "recipe_id": link["recipe_id"],
+                    "ingredient_id": ing_id,
+                    "quantity": link["quantity"],
+                    "unit": link["unit"],
+                })
+
+            if resolved_links:
+                supabase.table("recipe_ingredients").upsert(resolved_links, on_conflict="recipe_id,ingredient_id").execute()
 
             # ------------- link plan to chosen stores -------------
             if request.store_place_ids and plan_id:
