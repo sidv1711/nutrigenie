@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from .unit_conversion import normalize
 from ..core.supabase import get_supabase_admin
 
@@ -28,4 +28,23 @@ def get_cart_url(ingredients: List[dict], retailer: str = "instacart") -> Option
     if retailer == "instacart":
         return build_instacart_url(product_ids)
     # Extend for walmart, etc.
-    return None 
+    return None
+
+
+def get_available_retailers() -> List[Dict[str, str]]:
+    """Return list of supported retailers."""
+    return [
+        {"id": "instacart", "name": "Instacart"},
+        {"id": "walmart", "name": "Walmart"},
+    ]
+
+
+def get_cart_urls_for_all_retailers(ingredients: List[dict]) -> Dict[str, str]:
+    """Return cart URLs for all retailers that have product mappings."""
+    retailers = get_available_retailers()
+    urls = {}
+    for retailer in retailers:
+        url = get_cart_url(ingredients, retailer["id"])
+        if url:
+            urls[retailer["id"]] = url
+    return urls 
