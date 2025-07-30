@@ -60,24 +60,7 @@ async def login(payload: LoginPayload):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @router.get("/me", response_model=User)
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_me(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get the current authenticated user."""
-    try:
-        supabase = get_supabase()
-        # Set auth token for this request
-        supabase.auth.set_session(credentials.credentials, None)
-        
-        # Get user data
-        user = supabase.auth.get_user()
-        
-        if user is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-            
-        return User(
-            id=user.id,
-            email=user.email,
-            full_name=user.user_metadata.get("full_name", ""),
-            created_at=user.created_at
-        )
-    except Exception as e:
-        raise HTTPException(status_code=401, detail="Invalid token") 
+    from ..core.auth import get_current_user
+    return await get_current_user(credentials) 

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriGenie - AI-Powered Meal Planning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0fdf4',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+    <div class="container mx-auto px-4 py-16">
+        <div class="text-center">
+            <h1 class="text-6xl font-bold text-gray-900 mb-8">
+                🧞 NutriGenie
+            </h1>
+            <p class="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
+                AI-powered meal planning and grocery shopping made simple. 
+                Create personalized meal plans, get real-time pricing, and export directly to your favorite stores.
+            </p>
+            
+            <div class="space-y-4 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center mb-16">
+                <button class="block w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-colors">
+                    Get Started Free
+                </button>
+                <button class="block w-full sm:w-auto bg-white hover:bg-gray-50 text-green-600 font-bold py-3 px-8 rounded-lg border-2 border-green-600 transition-colors">
+                    Sign In
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+                <div class="text-center">
+                    <div class="text-4xl mb-4">🍽️</div>
+                    <h3 class="text-xl font-semibold mb-2">AI Meal Planning</h3>
+                    <p class="text-gray-600">Get personalized meal plans based on your dietary preferences and nutrition goals.</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl mb-4">🛒</div>
+                    <h3 class="text-xl font-semibold mb-2">Smart Shopping</h3>
+                    <p class="text-gray-600">Real-time pricing from multiple stores with direct cart export to Instacart, Walmart, and more.</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-4xl mb-4">📊</div>
+                    <h3 class="text-xl font-semibold mb-2">Nutrition Tracking</h3>
+                    <p class="text-gray-600">Track your daily nutrition with detailed breakdowns and personalized recommendations.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-8 max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6">How It Works</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">1️⃣</span>
+                        </div>
+                        <h4 class="font-semibold mb-2">Set Your Goals</h4>
+                        <p class="text-sm text-gray-600">Tell us about your dietary preferences, fitness goals, and budget.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">2️⃣</span>
+                        </div>
+                        <h4 class="font-semibold mb-2">AI Creates Plan</h4>
+                        <p class="text-sm text-gray-600">Our AI generates a personalized meal plan with complete recipes.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">3️⃣</span>
+                        </div>
+                        <h4 class="font-semibold mb-2">Get Prices</h4>
+                        <p class="text-sm text-gray-600">See real-time pricing from stores near you and compare options.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span class="text-2xl">4️⃣</span>
+                        </div>
+                        <h4 class="font-semibold mb-2">Shop & Cook</h4>
+                        <p class="text-sm text-gray-600">Export to your favorite store and start cooking delicious meals!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.textContent.includes('Get Started')) {
+                        alert('🧞 Welcome to NutriGenie! This is a demo of the frontend. The full app includes:\n\n✅ User authentication\n✅ Profile setup & onboarding\n✅ AI meal planning\n✅ Ingredient search with embeddings\n✅ Store selection & pricing\n✅ Grocery list generation\n✅ Cart export to Instacart/Walmart\n✅ Nutrition tracking\n\nTo see the full app, the Next.js server needs to be running properly.');
+                    } else {
+                        alert('🔐 Sign in functionality available in the full Next.js app!');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

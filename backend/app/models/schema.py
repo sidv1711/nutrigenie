@@ -18,14 +18,16 @@ class User(UserBase):
 
 class UserProfile(BaseModel):
     user_id: str
+    name: str = Field(..., min_length=1, max_length=100)
     age: int = Field(..., ge=13, le=100)
-    weight_kg: float = Field(..., ge=30, le=300)
-    height_cm: float = Field(..., ge=100, le=250)
+    gender: str = Field(..., pattern="^(male|female|other)$")
+    weight_kg: float = Field(..., ge=30, le=300)  # Stored in kg
+    height: float = Field(..., ge=100, le=250)  # Stored in cm
     activity_level: str = Field(..., pattern="^(sedentary|light|moderate|very_active|extra_active)$")
     fitness_goal: str = Field(..., pattern="^(lose_weight|maintain|gain_muscle)$")
     weekly_budget: float = Field(..., ge=20)
     dietary_restrictions: List[str] = []
-    location_zip: str = Field(..., min_length=5, max_length=10)
+    zip_code: str = Field(..., min_length=5, max_length=10)
     
     class Config:
         from_attributes = True

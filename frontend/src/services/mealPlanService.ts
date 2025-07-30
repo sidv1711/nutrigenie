@@ -14,6 +14,12 @@ export const mealPlanService = {
         return response.data;
     },
 
+    // Fetch all meal plans for current user
+    getAllMealPlans: async (): Promise<MealPlan[]> => {
+        const response = await api.get<MealPlan[]>('/meal-plans');
+        return response.data;
+    },
+
     deleteMealPlan: async (planId: string): Promise<void> => {
         await api.delete(`/meal-plans/${planId}`);
     },

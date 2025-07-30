@@ -16,7 +16,7 @@ export default function PDFExport({ type, data, variant, className }: Props) {
   return (
     <button
       onClick={handleExport}
-      className={`bg-blue-600 text-white px-3 py-1 rounded text-sm ${className}`}
+      className={className || `bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200`}
     >
       Export PDF
     </button>

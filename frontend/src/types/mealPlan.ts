@@ -38,6 +38,7 @@ export interface StoreSummary {
 }
 
 export interface MealPlan {
+    plan_id?: string;
     start_date: string;
     end_date: string;
     days: DayPlan[];
@@ -55,6 +56,7 @@ export interface MealPlanRequest {
     weekly_budget: number;
     location_zip: string;
     dietary_restrictions?: string[];
+    store_place_ids?: string[];
 }
 
 export interface GenerateMealPlanResponse {

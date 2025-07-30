@@ -152,133 +152,154 @@ const MealPlanForm: React.FC = () => {
     };
 
     return (
-        <div style={{ maxWidth: 400, margin: '2rem auto', padding: 24, background: '#fff', borderRadius: 8, boxShadow: '0 2px 8px #0001' }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, textAlign: 'center' }}>Generate Your Meal Plan</h1>
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="start_date" style={{ fontWeight: 700 }}>Start Date*</label>
+        <div className="max-w-md mx-auto my-4 sm:my-8 p-4 sm:p-6 bg-white rounded-lg shadow-sm">
+            <h1 className="text-xl sm:text-2xl font-bold mb-6 text-center">Generate Your Meal Plan</h1>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label htmlFor="start_date" className="block text-sm font-semibold text-gray-700 mb-1">Start Date*</label>
                     <input
-                                type="date"
-                                name="start_date"
+                        type="date"
+                        name="start_date"
                         id="start_date"
-                                value={formData.start_date}
-                                onChange={handleInputChange}
-                                min={new Date().toISOString().split('T')[0]}
+                        value={formData.start_date}
+                        onChange={handleInputChange}
+                        min={new Date().toISOString().split('T')[0]}
                         required
-                        style={{ width: '100%', padding: 8, marginTop: 4, color:'#1a202c', fontWeight:500 }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="end_date" style={{ fontWeight: 700 }}>End Date*</label>
+                
+                <div>
+                    <label htmlFor="end_date" className="block text-sm font-semibold text-gray-700 mb-1">End Date*</label>
                     <input
-                                type="date"
-                                name="end_date"
+                        type="date"
+                        name="end_date"
                         id="end_date"
-                                value={formData.end_date}
-                                onChange={handleInputChange}
-                                min={new Date().toISOString().split('T')[0]}
+                        value={formData.end_date}
+                        onChange={handleInputChange}
+                        min={new Date().toISOString().split('T')[0]}
                         required
-                        style={{ width: '100%', padding: 8, marginTop: 4, color:'#1a202c', fontWeight:500 }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="calories_per_day" style={{ fontWeight: 700 }}>Daily Calories*</label>
-                    <input
-                        type="number"
-                        name="calories_per_day"
-                        id="calories_per_day"
-                        value={formData.calories_per_day}
-                        onChange={handleNumberChange}
-                        min={1200}
-                        style={{ width: '100%', padding: 8, marginTop: 4, color: '#1a202c', fontWeight: 500 }}
-                    />
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="calories_per_day" className="block text-sm font-semibold text-gray-700 mb-1">Daily Calories*</label>
+                        <input
+                            type="number"
+                            name="calories_per_day"
+                            id="calories_per_day"
+                            value={formData.calories_per_day}
+                            onChange={handleNumberChange}
+                            min={1200}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="weekly_budget" className="block text-sm font-semibold text-gray-700 mb-1">Weekly Budget ($)*</label>
+                        <input
+                            type="number"
+                            name="weekly_budget"
+                            id="weekly_budget"
+                            value={formData.weekly_budget}
+                            onChange={handleNumberChange}
+                            min={0}
+                            required
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="protein_per_day" style={{ fontWeight: 700 }}>Daily Protein (g)*</label>
-                    <input
-                        type="number"
-                        name="protein_per_day"
-                        id="protein_per_day"
-                        value={formData.protein_per_day}
-                        onChange={handleNumberChange}
-                        min={30}
-                        style={{ width: '100%', padding: 8, marginTop: 4, color: '#1a202c', fontWeight: 500 }}
-                    />
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label htmlFor="protein_per_day" className="block text-sm font-semibold text-gray-700 mb-1">Protein (g)*</label>
+                        <input
+                            type="number"
+                            name="protein_per_day"
+                            id="protein_per_day"
+                            value={formData.protein_per_day}
+                            onChange={handleNumberChange}
+                            min={30}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="carbs_per_day" className="block text-sm font-semibold text-gray-700 mb-1">Carbs (g)*</label>
+                        <input
+                            type="number"
+                            name="carbs_per_day"
+                            id="carbs_per_day"
+                            value={formData.carbs_per_day}
+                            onChange={handleNumberChange}
+                            min={50}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="fat_per_day" className="block text-sm font-semibold text-gray-700 mb-1">Fat (g)*</label>
+                        <input
+                            type="number"
+                            name="fat_per_day"
+                            id="fat_per_day"
+                            value={formData.fat_per_day}
+                            onChange={handleNumberChange}
+                            min={20}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="carbs_per_day" style={{ fontWeight: 700 }}>Daily Carbs (g)*</label>
+                
+                <div>
+                    <label htmlFor="location_zip" className="block text-sm font-semibold text-gray-700 mb-1">ZIP Code*</label>
                     <input
-                        type="number"
-                        name="carbs_per_day"
-                        id="carbs_per_day"
-                        value={formData.carbs_per_day}
-                        onChange={handleNumberChange}
-                        min={50}
-                        style={{ width: '100%', padding: 8, marginTop: 4, color: '#1a202c', fontWeight: 500 }}
-                    />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="fat_per_day" style={{ fontWeight: 700 }}>Daily Fat (g)*</label>
-                    <input
-                        type="number"
-                        name="fat_per_day"
-                        id="fat_per_day"
-                        value={formData.fat_per_day}
-                        onChange={handleNumberChange}
-                        min={20}
-                        style={{ width: '100%', padding: 8, marginTop: 4, color: '#1a202c', fontWeight: 500 }}
-                    />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="weekly_budget" style={{ fontWeight: 700 }}>Weekly Budget ($)*</label>
-                    <input
-                        type="number"
-                        name="weekly_budget"
-                        id="weekly_budget"
-                        value={formData.weekly_budget}
-                        onChange={handleNumberChange}
-                        min={0}
-                        required
-                        style={{ width: '100%', padding: 8, marginTop: 4, color: '#1a202c', fontWeight: 500 }}
-                    />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label htmlFor="location_zip" style={{ fontWeight: 700 }}>ZIP Code*</label>
-                    <input
-                                type="text"
-                                name="location_zip"
+                        type="text"
+                        name="location_zip"
                         id="location_zip"
-                                value={formData.location_zip}
-                                onChange={handleInputChange}
-                                pattern="[0-9]{5}"
-                                placeholder="Enter your ZIP code"
+                        value={formData.location_zip}
+                        onChange={handleInputChange}
+                        pattern="[0-9]{5}"
+                        placeholder="Enter your ZIP code"
                         required
-                        style={{ width: '100%', padding: 8, marginTop: 4, color:'#1a202c', fontWeight:500 }}
-                            />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                    <label style={{ fontWeight: 700 }}>Dietary Restrictions</label>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+                
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Dietary Restrictions</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {dietaryRestrictions.map((restriction) => (
-                            <label key={restriction} style={{ fontWeight: 400 }}>
+                            <label key={restriction} className="flex items-center space-x-2 text-sm">
                                 <input
                                     type="checkbox"
                                     value={restriction}
                                     checked={formData.dietary_restrictions?.some(r => r.toLowerCase() === restriction.toLowerCase()) || false}
                                     onChange={handleDietaryRestrictionsChange}
-                                    style={{ marginRight: 8 }}
+                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                 />
-                                            {restriction}
+                                <span className="text-gray-700">{restriction}</span>
                             </label>
-                                    ))}
+                        ))}
                     </div>
                 </div>
-                {error && <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>}
+                
+                {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-800">
+                        {error}
+                    </div>
+                )}
                 <button
-                            type="submit"
+                    type="submit"
                     disabled={isLoading}
-                    style={{ width: '100%', padding: 12, fontWeight: 700, fontSize: 16, background: '#3182ce', color: '#fff', border: 'none', borderRadius: 4, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+                    className={`w-full py-3 px-4 rounded-md font-semibold text-white transition-colors duration-200 flex items-center justify-center gap-2 ${
+                        isLoading 
+                            ? 'bg-gray-400 cursor-not-allowed' 
+                            : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                    }`}
                 >
+                    {isLoading && (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    )}
                     {isLoading ? 'Generating...' : 'Generate Meal Plan'}
                 </button>
             </form>

@@ -4,14 +4,13 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 
 const onboardingSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
   age: z.number().min(13, 'Must be at least 13 years old').max(120, 'Invalid age'),
-  gender: z.enum(['male', 'female']),
   weight: z.number().min(30, 'Weight must be at least 30kg').max(300, 'Weight must be less than 300kg'),
   height: z.number().min(100, 'Height must be at least 100cm').max(250, 'Height must be less than 250cm'),
-  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'active', 'veryActive'] as const),
+  activityLevel: z.enum(['sedentary', 'light', 'moderate', 'very_active', 'extra_active'] as const),
   dietaryRestrictions: z.array(z.string()),
   budget: z.number().min(0, 'Budget must be positive'),
+  locationZip: z.string().min(5, 'ZIP code must be at least 5 characters')
 })
 
 export async function POST(request: Request) {
@@ -60,72 +59,69 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
+    console.log('Raw request body:', JSON.stringify(body, null, 2))
+    
     const validatedData = onboardingSchema.parse(body)
+    console.log('Validated data:', JSON.stringify(validatedData, null, 2))
 
-    // First, insert profile in Supabase (needed for FK constraints)
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([
-        {
-          id: user.id,
-          name: validatedData.name,
-          age: validatedData.age,
-          gender: validatedData.gender,
-          weight: validatedData.weight,
-          height: validatedData.height,
-          activity_level: validatedData.activityLevel,
-          dietary_restrictions: validatedData.dietaryRestrictions,
-          weekly_budget: validatedData.budget,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Error inserting profile:', error)
-      return NextResponse.json(
-        { error: 'Failed to create profile' },
-        { status: 500 }
-      )
+    // Create profile via backend API (which handles all validation)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const profileData = {
+      age: Number(validatedData.age),
+      weight_kg: Number(validatedData.weight),
+      height_cm: Number(validatedData.height),
+      activity_level: validatedData.activityLevel,
+      fitness_goal: 'maintain', // default fitness goal
+      weekly_budget: Number(validatedData.budget),
+      dietary_restrictions: validatedData.dietaryRestrictions,
+      location_zip: validatedData.locationZip
     }
 
-    // Call backend /macros endpoint to compute and persist nutrition targets (after profile exists)
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-    const macrosRes = await fetch(`${apiUrl}/macros/compute`, {
+    console.log('Sending profile data to backend:', JSON.stringify(profileData, null, 2))
+    console.log('Original form data:', JSON.stringify(validatedData, null, 2))
+
+    const profileRes = await fetch(`${apiUrl}/profiles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({
-        age: validatedData.age,
-        gender: validatedData.gender,
-        weight_kg: validatedData.weight,
-        height_cm: validatedData.height,
-        activity_level: validatedData.activityLevel,
-        fitness_goal: 'maintain',
-      }),
+      body: JSON.stringify(profileData),
     })
 
-    if (!macrosRes.ok) {
-      const errJson = await macrosRes.json()
-      console.error('Macro endpoint error:', errJson)
+    if (!profileRes.ok) {
+      const errJson = await profileRes.json()
+      console.error('Profile creation error:', {
+        status: profileRes.status,
+        statusText: profileRes.statusText,
+        error: errJson,
+        sentData: profileData,
+        headers: Object.fromEntries(profileRes.headers.entries())
+      })
+      
+      let errorMessage = 'Failed to create profile'
+      if (profileRes.status === 422) {
+        errorMessage = 'Validation error: ' + (errJson.detail || 'Invalid data format')
+        if (errJson.detail && typeof errJson.detail === 'object') {
+          errorMessage += '. Check: ' + JSON.stringify(errJson.detail)
+        }
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to calculate nutrition targets' },
-        { status: 500 }
+        { error: errorMessage, details: errJson, debugData: profileData },
+        { status: profileRes.status }
       )
     }
 
-    const macros = await macrosRes.json()
+    const profile = await profileRes.json()
 
-    // Update user metadata to mark registration as complete
-    await supabase.auth.updateUser({
-      data: { registration_completed: true }
+    // Don't mark registration as complete yet - wait for meal plan
+    return NextResponse.json({ 
+      success: true, 
+      profile,
+      message: 'Profile created successfully',
+      next_step: 'meal_plan'
     })
-
-    return NextResponse.json(data)
   } catch (error) {
     console.error('Error processing request:', error)
     if (error instanceof z.ZodError) {

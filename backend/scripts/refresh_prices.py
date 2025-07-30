@@ -16,6 +16,8 @@ from typing import List, Dict, Optional
 from app.core.supabase import get_supabase_admin
 from app.services.kroger import KrogerPriceSource
 from app.services.walmart import WalmartPriceSource
+from app.services.safeway_fallback import SafewayFallbackPriceSource
+from app.services.instacart import InstacartWholeFoodsSource, InstacartSafewaySource
 
 # Ensure .env variables (including KROGER_CLIENT_ID / SECRET) are loaded when
 # this script runs outside the FastAPI context.
@@ -31,18 +33,34 @@ SUPABASE = get_supabase_admin()
 # Instantiate once so token caching works and metrics are shared.
 KROGER = KrogerPriceSource()
 WALMART = WalmartPriceSource()
-SOURCES = [KROGER, WALMART]
+SAFEWAY = SafewayFallbackPriceSource()
+INSTACART_WF = InstacartWholeFoodsSource()
+INSTACART_SAFEWAY = InstacartSafewaySource()
+
+# Note: Instacart sources are disabled by default due to complexity
+# Safeway now uses fallback pricing with realistic estimates instead of broken web scraping
+SOURCES = [KROGER, WALMART, SAFEWAY]
+# SOURCES = [KROGER, WALMART, SAFEWAY, INSTACART_WF, INSTACART_SAFEWAY]
 
 CONCURRENCY = 20
 
 
 def iter_store_mappings() -> List[Dict]:
     """Return each store row with the retailer-specific IDs we need."""
-    res = (
-        SUPABASE.table("stores")
-        .select("place_id,kroger_location_id,walmart_store_id,lat,lon")
-        .execute()
-    )
+    try:
+        # Try with safeway_store_id column
+        res = (
+            SUPABASE.table("stores")
+            .select("place_id,kroger_location_id,walmart_store_id,safeway_store_id,name,lat,lon")
+            .execute()
+        )
+    except:
+        # Fallback without safeway_store_id if column doesn't exist
+        res = (
+            SUPABASE.table("stores")
+            .select("place_id,kroger_location_id,walmart_store_id,name,lat,lon")
+            .execute()
+        )
     return res.data or []
 
 
@@ -77,6 +95,25 @@ def maybe_update_external_ids(store: Dict) -> Dict:
         walmart_id = WALMART.lookup_store_id(lat, lon)
         if walmart_id:
             updated["walmart_store_id"] = walmart_id
+
+    # Only try to update safeway_store_id if the column exists
+    if 'safeway_store_id' in store and not store.get("safeway_store_id"):
+        safeway_banners = [
+            "safeway",
+            "albertsons",
+            "vons",
+            "pavilions",
+            "tom thumb",
+            "randalls",
+            "shaw",
+            "star market",
+            "acme"
+        ]
+        store_name = (store.get("name") or "").lower()
+        if any(b in store_name for b in safeway_banners):
+            safeway_id = SAFEWAY.lookup_store_id(lat, lon)
+            if safeway_id:
+                updated["safeway_store_id"] = safeway_id
 
     if updated:
         SUPABASE.table("stores").update(updated).eq("place_id", store["place_id"]).execute()
@@ -142,6 +179,11 @@ async def gather_prices() -> List[Dict]:
                 ext_id = store.get("kroger_location_id")
             elif src.source_name == "walmart_web":
                 ext_id = store.get("walmart_store_id")
+            elif src.source_name == "safeway_fallback":
+                # Use default store ID for fallback pricing
+                ext_id = store.get("safeway_store_id") or "3132"  # Default store ID
+            elif src.source_name.startswith("instacart_"):
+                ext_id = store.get("instacart_zone_id")
             else:
                 ext_id = None
             if not ext_id:
@@ -162,8 +204,20 @@ def bulk_upsert(rows: List[Dict]):
     if not rows:
         logging.info("No rows to upsert; exiting")
         return
-    logging.info("Bulk upserting %d rows", len(rows))
-    SUPABASE.table("stores_prices").upsert(rows).execute()
+    
+    # Deduplicate rows by (place_id, ingredient_name) keeping the most recent/best price
+    seen = {}
+    deduplicated = []
+    
+    for row in rows:
+        key = (row["place_id"], row["ingredient_name"])
+        if key not in seen or row["price_per_unit"] < seen[key]["price_per_unit"]:
+            seen[key] = row
+    
+    deduplicated = list(seen.values())
+    
+    logging.info("Bulk upserting %d deduplicated rows (from %d total)", len(deduplicated), len(rows))
+    SUPABASE.table("stores_prices").upsert(deduplicated).execute()
 
 
 def main():

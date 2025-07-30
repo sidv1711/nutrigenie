@@ -14,7 +14,7 @@ def get_meal_plan_functions() -> List[Dict[str, Any]]:
     return [
         {
             "name": "create_meal_plan",
-            "description": "Create a meal plan that meets the user's nutritional and dietary requirements",
+            "description": "Create a budget-conscious meal plan that meets the user's nutritional, dietary, and budget requirements",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -142,7 +142,7 @@ def get_meal_plan_functions() -> List[Dict[str, Any]]:
                     },
                     "total_cost": {
                         "type": "number",
-                        "description": "Total estimated cost of all ingredients"
+                        "description": "Total estimated cost of all ingredients - MUST be within the specified weekly budget"
                     }
                 },
                 "required": ["days", "total_cost"]
@@ -203,6 +203,11 @@ Ensure recipes are simple, healthy, and budget-friendly."""
         raise ValueError("Failed to generate meal plan")
 
     meal_plan_data = json.loads(function_call.arguments)
+    
+    # Basic validation logging
+    days_generated = len(meal_plan_data.get('days', []))
+    if days_generated != days_diff:
+        logging.warning(f"Legacy service: generated {days_generated} days, expected {days_diff}")
     
     # Convert to MealPlan model
     plan = MealPlan(
@@ -319,7 +324,12 @@ Ensure recipes are simple, healthy, and budget-friendly."""
                 })
 
             if resolved_links:
-                supabase.table("recipe_ingredients").upsert(resolved_links, on_conflict="recipe_id,ingredient_id").execute()
+                # Use insert instead of upsert since there's no unique constraint
+                try:
+                    supabase.table("recipe_ingredients").insert(resolved_links).execute()
+                except Exception as e:
+                    print(f"Warning: Failed to insert recipe ingredients: {e}")
+                    # Continue without failing the entire meal plan generation
 
             # ------------- link plan to chosen stores -------------
             if request.store_place_ids and plan_id:

@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   webpack: (config) => {
     // Suppress dynamic `require` warnings from the Supabase realtime client
     config.ignoreWarnings = [

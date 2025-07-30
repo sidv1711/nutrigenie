@@ -1,13 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 from ...models.meal_plan import MealPlan, MealPlanRequest
-from ...services.meal_plan import generate_meal_plan
+from ...services.rag_meal_plan import get_rag_meal_plan_service
 from ...db.session import get_db
 from ...core.auth import get_current_user
 from ...models.schema import User
 
 router = APIRouter(prefix="/meal-plans", tags=["meal-plans"])
+
+@router.get("")
+async def get_all_meal_plans(current_user: User = Depends(get_current_user)) -> List[dict]:
+    """Get all meal plans for the current user."""
+    try:
+        from ...core.supabase import get_supabase_admin
+        supabase = get_supabase_admin()
+        
+        # Fetch meal plans for current user
+        result = supabase.table("meal_plans").select("*").eq("user_id", current_user.id).order("created_at", desc=True).execute()
+        
+        meal_plans = []
+        for plan in result.data or []:
+            meal_plans.append({
+                "id": plan["id"],
+                "start_date": plan["start_date"],
+                "end_date": plan["end_date"],
+                "total_cost": plan["total_cost"],
+                "created_at": plan["created_at"],
+                "estimated_cost": plan["total_cost"]  # For compatibility with frontend
+            })
+        
+        return meal_plans
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch meal plans: {str(e)}")
 
 @router.post("/generate")
 async def create_meal_plan(
@@ -19,7 +45,9 @@ async def create_meal_plan(
     Generate a personalized meal plan based on user preferences and requirements.
     """
     try:
-        meal_plan, plan_id = generate_meal_plan(request, current_user.id)
+        # Use RAG-enhanced meal planning service
+        rag_service = get_rag_meal_plan_service()
+        meal_plan, plan_id = rag_service.generate_rag_enhanced_meal_plan(request, current_user.id)
         return {"plan_id": plan_id, "plan": meal_plan}
     except Exception as e:
         raise HTTPException(
@@ -34,6 +62,11 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
         from ...core.supabase import get_supabase_admin
         import logging, traceback
         supabase = get_supabase_admin()
+        
+        # Validate plan_id
+        if not plan_id or plan_id == "null" or plan_id == "undefined":
+            raise HTTPException(status_code=400, detail="Invalid meal plan ID")
+        
         # get header row
         plan_header = supabase.table("meal_plans").select("id, start_date, end_date, total_cost").eq("id", plan_id).single().execute()
         if not plan_header.data:
@@ -57,7 +90,7 @@ async def get_meal_plan(plan_id: str, current_user: User = Depends(get_current_u
                 "meal_type": rec["meal_type"],
                 "servings": rec["servings"],
                 "recipe": {
-                    "name": recipe_row["name"],
+                    "name": recipe_row["name"].split('_')[0] if '_' in recipe_row["name"] else recipe_row["name"],  # Remove unique suffix for display
                     "description": recipe_row.get("description"),
                     "instructions": recipe_row.get("instructions", []),
                     "prep_time_minutes": recipe_row.get("prep_time_minutes"),
